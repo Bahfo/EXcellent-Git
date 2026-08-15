@@ -15,3 +15,4 @@ excellentgit-test-*
 *.o
 *.obj
 *.lst
+/public
