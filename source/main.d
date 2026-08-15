@@ -4,6 +4,8 @@ import std.stdio;
 import std.array;
 import std.string;
 import std.process;
+import std.algorithm;
+
 
 struct Commit {
     string hash;
@@ -178,6 +180,66 @@ string getFileContents(string repoPath, string filePath) {
     return result.output;
 }
 
+string generateIndexHTML(string repoName, string repoPath, Commit[] commits, RepositoryFile[] files) {
+	string body = "";
+    body ~= `<div class="card">
+        <div class="card-header">Repository Overview</div>
+        <div class="card-body">
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div style="color: var(--text-muted); font-size: 12px;">Total Commits</div>
+                    <div class="stat-val">` ~ format("%d", commits.length) ~ `</div>
+                </div>
+                <div class="stat-box">
+                    <div style="color: var(--text-muted); font-size: 12px;">Files in HEAD</div>
+                    <div class="stat-val">` ~ format("%d", files.length) ~ `</div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    body ~= `<div class="card">
+        <div class="card-header">Recent Commits</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Commit</th>
+                    <th>Description</th>
+                    <th>Author</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    size_t recentCount = min(commits.length, 5);
+    for (size_t i = 0; i < recentCount; i++) {
+        auto c = commits[i];
+        body ~= `<tr>
+            <td class="hash">` ~ escapeHTML(c.hash) ~ `</td>
+            <td>` ~ escapeHTML(c.message) ~ `</td>
+            <td>` ~ escapeHTML(c.author) ~ `</td>
+            <td style="color: var(--text-muted);">` ~ escapeHTML(c.date) ~ `</td>
+        </tr>`;
+    }
+
+    body ~= `</tbody></table></div>`;
+
+    foreach (f; files) {
+        if (f.path.toLower == "readme.md" || f.path.toLower == "readme") {
+            string readmeText = getFileContents(repoPath, f.path);
+            body ~= `<div class="card">
+                <div class="card-header">` ~ escapeHTML(f.path) ~ `</div>
+                <div class="card-body">
+                    <pre><code>` ~ escapeHTML(readmeText) ~ `</code></pre>
+                </div>
+            </div>`;
+            break;
+        }
+    }
+
+    return renderLayout(repoName, "Summary", body);
+}
+
 int main(string[] args) {
     string repoPath = (args.length > 1) ? args[1] : ".";
     repoPath = buildNormalizedPath(absolutePath(repoPath));
@@ -196,13 +258,16 @@ int main(string[] args) {
     string repoName = baseName(repoPath);
     writeln("Targeting Git repository: ", repoName);
 
-    string sampleBody = `<div class="card">
-        <div class="card-header">Repository Status</div>
-        <div class="card-body">Site template initialized for Google Git UI look.</div>
-    </div>`;
+    Commit[] commits = getCommits(repoPath);
+    RepositoryFile[] files = getTree(repoPath);
 
-    string fullHTML = renderLayout(repoName, "Summary", sampleBody);
-    writeln("\nGenerated ", fullHTML.length, " bytes of layout HTML successfully.");
+    string outDir = buildPath(repoPath, "public");
+    mkdirRecurse(outDir);
 
+    string indexHTML = generateIndexHTML(repoName, repoPath, commits, files);
+    string indexPath = buildPath(outDir, "index.html");
+    std.file.write(indexPath, indexHTML);
+
+    writeln("Generated: ", indexPath);
     return 0;
 }
