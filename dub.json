@@ -1,0 +1,9 @@
+{
+	"description": "EXcellent TechStacks web wrapper around Git. Featuring static codebase browsing for a repository.",
+	"license": "GPL-3.0-or-later",
+	"authors": [
+		"Bahaa Nofal"
+	],
+	"copyright": "Copyright © 2026, Bahaa Nofal",
+	"name": "excellentgit"
+}

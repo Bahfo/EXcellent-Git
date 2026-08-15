@@ -1,0 +1,17 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/excellentgit
+excellentgit.so
+excellentgit.dylib
+excellentgit.dll
+libexcellentgit.a
+excellentgit.a
+excellentgit.lib
+excellentgit-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst
